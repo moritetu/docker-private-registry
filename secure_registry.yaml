@@ -1,0 +1,5 @@
+- hosts: secure_registry
+  become: yes
+  roles:
+    - docker
+    - secure_registry

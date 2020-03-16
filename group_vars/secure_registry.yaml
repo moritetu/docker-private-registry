@@ -1,0 +1,21 @@
+registry:
+  cert_dir: &cert_dir /root/docker/registry/certs
+  cert:
+    subject:
+      countryName: JP
+      # Default is registry hostname
+      commonName: registry.example.com
+      organizationName: My Inc
+      emailAddress: registry@example.com
+      #organizationalUnitName:
+      #localityName: 
+  ports:
+    - 443:443
+  volumes:
+    - src: *cert_dir
+      dest: /certs
+  config:
+    http:
+      addr: 0.0.0.0:443
+      tls_certificate: /certs/server.crt
+      tls_key: /certs/server.key

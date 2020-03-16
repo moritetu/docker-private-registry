@@ -1,0 +1,30 @@
+- name: Make work dir 
+  file:
+    path: "{{ docker.registry.build_dir }}"
+    state: directory
+
+
+- name: Make mounted directories
+  file:
+    path: "{{ dir.src }}"
+    state: directory
+  with_items: 
+    - "{{ docker.registry.volumes }}"
+    - "{{ registry.volumes | default([]) }}"
+  loop_control:
+    loop_var: dir
+
+
+- name: Register registry as insecure
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+
+
+- name: "Copy docker-compose to {{ docker.registry.build_dir }}"
+  template:
+    src: docker-compose.yaml.j2
+    dest: "{{ docker.registry.build_dir }}/docker-compose.yaml"
+  notify:
+    - restart docker
+    - up registry

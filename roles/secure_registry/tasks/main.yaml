@@ -1,0 +1,70 @@
+- name: Make work dir 
+  file:
+    path: "{{ docker.registry.build_dir }}"
+    state: directory
+
+#
+# OpenSSL Section
+#
+#   Generate a Self Signed OpenSSL certificate
+#
+- name: Generate an OpenSSL private key with a different size (2048 bits)
+  openssl_privatekey:
+    path:  "{{ registry.cert_dir }}/{{ registry.config.http.tls_key | basename }}"
+    size: 2048
+
+# Check: openssl req -in server.csr -noout -text
+- name: Generate an OpenSSL Certificate Signing Request with Subject information
+  openssl_csr:
+    path: "{{ registry.cert_dir }}/{{ registry.config.http.tls_certificate | basename | splitext | first }}.csr"
+    privatekey_path: "{{ registry.cert_dir }}/{{ registry.config.http.tls_key | basename }}"
+    subject: "{{ registry.cert.subject }}"
+
+# Check: openssl x509 -text -noout -in server.crt
+- name: Generate a Self Signed OpenSSL certificate
+  openssl_certificate:
+    path: "{{ registry.cert_dir }}/{{ registry.config.http.tls_certificate | basename }}"
+    csr_path: "{{ registry.cert_dir }}/{{ registry.config.http.tls_certificate | basename | splitext | first }}.csr"
+    privatekey_path: "{{ registry.cert_dir }}/{{ registry.config.http.tls_key | basename }}"
+    provider: selfsigned
+    subject: "{{ registry.cert.subject }}"
+
+
+- name: Make mounted directories
+  file:
+    path: "{{ dir.src }}"
+    state: directory
+  with_items:
+    - "{{ docker.registry.volumes }}"
+    - "{{ registry.volumes | default([]) }}"
+  loop_control:
+    loop_var: dir
+
+
+- name: Remove insecure lines from daemon.json
+  lineinfile:
+    path: /etc/docker/daemon.json
+    regexp: 'insecure-registries'
+    state: absent
+  notify: restart docker
+
+
+- name: Enable to access self-certificated registry
+  file:
+    path: "/etc/docker/certs.d/{{ docker.registry.host }}"
+    state: directory
+
+- name: Copy certificate to /etc/docker/certs.d
+  copy:
+    remote_src: yes
+    src: "{{ registry.cert_dir }}/{{ registry.config.http.tls_certificate | basename }}"
+    dest: "/etc/docker/certs.d/{{ docker.registry.host }}/"
+
+
+- name: "Copy docker-compose to {{ docker.registry.build_dir }}"
+  template:
+    src: docker-compose.yaml.j2
+    dest: "{{ docker.registry.build_dir }}/docker-compose.yaml"
+  notify:
+    - restart docker
+    - up registry

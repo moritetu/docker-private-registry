@@ -1,0 +1,97 @@
+- name: Include registry vars
+  include_vars:
+    file: "group_vars/{{ registry_type }}.yaml"
+
+
+- name: Add repo for centos7
+  shell:
+    cmd: "yum-config-manager --add-repo {{ repo.centos.podman.ver7 }}"
+  when:
+    - ansible_distribution == "CentOS"
+    - ansible_distribution_major_version == "7"
+
+
+- name: Add repo for centos8
+  shell:
+    cmd: "yum-config-manager --add-repo {{ repo.centos.podman.ver8 }}" 
+  when:
+    - ansible_distribution == "CentOS"
+    - ansible_distribution_major_version == "8"
+
+
+- name: Install podman
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - "podman-{{ podman.version }}"
+
+
+- name: Add insecure registry
+  block:
+    - shell: |
+        cat registries.conf | sed "
+          /registries\.search/{
+            n
+            s/registries = .*/registries = {{ podman.registries.search }}/
+          };
+          /registries\.insecure/{
+            n
+            s/registries = .*/registries = {{ [docker.registry.host + ":" + registry.config.http.addr.split(':')[1]] + podman.registries.insecure }}/
+          };
+          /registries\.block/{
+            n
+            s/*registries = .*/registries = {{ podman.registries.block }}/
+          }" > registries.conf.tmp;
+      args:
+        chdir: /etc/containers
+        executable: /bin/bash
+   
+    - name: Swap registries.conf
+      shell: "{{ lookup('template', 'swap_file.sh.j2') }}"
+      args:
+        chdir: /etc/containers
+        executable: /bin/bash
+      vars:
+        backup:
+          src: registries.conf.tmp 
+          dest: registries.conf
+          generation: "{{ config.backup.generation }}"
+
+  when: reg_type == "insecure_registry"
+
+
+- name: Add secure registry
+  block:
+      # We expect that self-certificated server is appended.
+    - shell: |
+        cat registries.conf | sed "
+          /registries\.search/{
+            n
+            s/registries = .*/registries = {{ podman.registries.search }}/
+          };
+          /registries\.insecure/{
+            n
+            s/registries = .*/registries = {{ podman.registries.insecure + [docker.registry.host] }}/
+          };
+          /registries\.block/{
+            n
+            s/*registries = .*/registries = {{ podman.registries.block }}/
+        }" > registries.conf.tmp;
+      args:
+        chdir: /etc/containers
+        executable: /bin/bash
+
+    - name: Swap registries.conf
+      shell: "{{ lookup('template', 'swap_file.sh.j2') }}"
+      args:
+        chdir: /etc/containers
+        executable: /bin/bash
+      vars:
+        backup:
+          src: registries.conf.tmp 
+          dest: registries.conf
+          generation: "{{ config.backup.generation }}"
+
+  when: reg_type == "secure_registry"

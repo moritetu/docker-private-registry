@@ -1,0 +1,33 @@
+- name: Install required packages
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+
+
+- name: Install docker repo
+  shell: "yum-config-manager --add-repo {{ repo.centos['docker-ce'] }}"
+
+
+- name: "Install docker {{ docker.version }}"
+  yum:
+    name: "{{ packages }}"
+    state: present
+    enablerepo: docker-ce-stable
+  vars:
+    packages:
+      - "docker-ce-{{ docker.version }}"
+      - "docker-ce-cli-{{ docker.version }}"
+      - containerd.io
+  notify:
+    - restart docker
+
+
+- name: Enable docker service
+  service: 
+    name: docker
+    enabled: yes

@@ -1,0 +1,5 @@
+- hosts: insecure_registry
+  become: yes
+  roles:
+    - docker
+    - insecure_registry

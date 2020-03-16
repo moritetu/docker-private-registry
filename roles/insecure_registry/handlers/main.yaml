@@ -1,0 +1,9 @@
+- name: restart registry
+  shell:
+    cmd: docker-compose restart
+    chdir: "{{ docker.registry.build_dir }}"
+
+- name: up registry
+  shell:
+    cmd: docker-compose up -d
+    chdir: "{{ docker.registry.build_dir }}"

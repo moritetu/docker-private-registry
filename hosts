@@ -1,0 +1,26 @@
+[secure_registry]
+secure-reg         ansible_host=192.168.56.101
+
+[insecure_registry]
+insecure-reg       ansible_host=192.168.56.101
+
+[registry:children]
+secure_registry
+insecure_registry
+
+[podman_cli]
+client-podman-1    ansible_host=192.168.33.10
+
+[secure_cli:children]
+podman_cli
+
+[insecure_cli:children]
+podman_cli
+
+[clients:children]
+secure_cli
+insecure_cli
+
+[all:vars]
+ansible_user=vagrant
+ansible_password=vagrant

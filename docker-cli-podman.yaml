@@ -1,0 +1,8 @@
+- hosts: podman_cli
+  become: yes
+  pre_tasks:
+    - assert: { that: "reg_type is defined", msg: "reg_type must be passed: --extra-vars reg_type=[secure_registry|insecure_registry]"}
+  roles:
+    - role: podman_cli
+      vars:
+        registry_type: "{{ reg_type }}"

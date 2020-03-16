@@ -1,0 +1,6 @@
+registry:
+  ports:
+    - 5000:5000
+  config:
+    http:
+      addr: 0.0.0.0:5000

@@ -1,0 +1,59 @@
+#
+# Docke registry
+#
+docker:
+  # Releases
+  #   See: https://github.com/docker/docker-ce/releases
+  version: 19.03.8
+
+  #
+  # Dockre registry config
+  #
+  registry:
+    # Base directory to run docker-compose
+    build_dir: /root/docker/registry/docker-registry
+    # Registry server name
+    host: registry.example.com
+    # Registry container name
+    container_name: private-docker-registry
+    # Container restart policy
+    restart: always
+    # Registry container image
+    image: registry:2
+    # Mount volumes
+    volumes:
+      - src: /root/docker/registry/data
+        dest: /var/lib/registry
+
+#
+# Podman container engine
+#
+podman:
+  version: 1.8.1
+  registries:
+    search:
+      - 'registry.access.redhat.com'
+      - 'docker.io'
+      - 'registry.fedoraproject.org'
+      - 'quay.io'
+      - 'registry.centos.org'
+    insecure: []
+    block: []
+
+
+#
+# Package repositories
+#
+repo:
+  centos:
+    docker-ce: "https://download.docker.com/linux/centos/docker-ce.repo"
+    podman:
+      ver7: https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_7/devel:kubic:libcontainers:stable.repo
+      ver8: https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
+
+
+config:
+  backup:
+    # Maximun number to backup config.
+    generation: 10
+

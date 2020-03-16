@@ -1,0 +1,18 @@
+version: "3.3"
+services:
+  registry:
+    restart: {{ docker.registry.restart }}
+    container_name: {{ docker.registry.container_name }}
+    image: {{ docker.registry.image }}
+    ports: {{ registry.ports }}
+    environment:
+      # https://docs.docker.com/registry/configuration/
+      # Enable configurationwith yaml format.
+      # -v `pwd`/config.yml:/etc/docker/registry/config.yml
+      REGISTRY_HTTP_ADDR: {{ registry.config.http.addr }}
+      REGISTRY_HTTP_TLS_CERTIFICATE: {{ registry.config.http.tls_certificate }}
+      REGISTRY_HTTP_TLS_KEY: {{ registry.config.http.tls_key }}
+    volumes:
+{% for volume in docker.registry.volumes + registry.volumes | default([]) %}
+      - {{ volume.src}}:{{ volume.dest }}
+{% endfor %}

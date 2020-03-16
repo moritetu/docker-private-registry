@@ -1,0 +1,14 @@
+{#
+  Backup a file
+
+  params:
+    - backup.generation int  backup max generation(default: 10)
+    - backup.file       str  backup file name
+
+#}
+i=0;
+for i in $(seq 0 {{ backup.generation | default(10) }}); do
+  test ! -f "{{ backup.file }}.$i" && break;
+done;
+/bin/cp "{{ backup.file }}"  {{ backup.file }}.$((i % {{ backup.generation | default(10) }}));
+
